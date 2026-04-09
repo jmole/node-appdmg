@@ -45,13 +45,15 @@ describe('bin', function () {
     const targetDir = temp.mkdirSync()
     const targetPath = path.join(targetDir, 'Test.dmg')
 
-    const res = spawnSync(bin, [source, targetPath])
+    try {
+      const res = spawnSync(bin, [source, targetPath])
 
-    fs.unlinkSync(targetPath)
-    fs.rmdirSync(targetDir)
-
-    assert.strictEqual(res.status, 0)
-    assert.ok(bufferContains(res.stderr, targetPath))
+      assert.strictEqual(res.status, 0)
+      assert.ok(bufferContains(res.stderr, targetPath))
+    } finally {
+      try { fs.unlinkSync(targetPath) } catch (err) {}
+      try { fs.rmdirSync(targetDir) } catch (err) {}
+    }
   })
 
   it('should fail with too many arguments', function () {

@@ -21,6 +21,10 @@ function runAppdmg (opts, verify, cb) {
     progressCalled++
   })
 
+  ee.on('error', function (err) {
+    cb(err)
+  })
+
   ee.on('finish', function () {
     try {
       assert.strictEqual(progressCalled, STEPS * 2)
@@ -64,8 +68,7 @@ describe('api', function () {
   })
 
   afterEach(function () {
-    try { fs.unlinkSync(targetPath) } catch (err) {}
-    try { fs.rmdirSync(path.dirname(targetPath)) } catch (err) {}
+    try { fs.rmSync(targetDir, { recursive: true, force: true }) } catch (err) {}
   })
 
   it('creates an image from a modern specification', function (done) {

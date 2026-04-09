@@ -2,6 +2,14 @@
 
 Generate beautiful DMG-images for your macOS applications.
 
+## Use without Installing
+
+From the workspace root, you can run the CLI without a global install:
+
+```sh
+npm run appdmg -- <json-path> <dmg-path>
+```
+
 ## Installation
 
 ```sh

@@ -37,11 +37,11 @@ function captureAndVerify (title, expectedPath, cb) {
         expectedPath = expectedPath.replace(/(\.[^.]*)$/, '@2x$1')
       }
 
-      looksSame(pngPath, expectedPath, toleranceOpts, function (err1, ok) {
+      looksSame(pngPath, expectedPath, toleranceOpts, function (err1, result) {
         fs.unlink(pngPath, function (err2) {
           if (err1) return cb(err1)
           if (err2) return cb(err2)
-          if (ok) return cb(null)
+          if (result && result.equal) return cb(null)
 
           cb(Object.assign(new Error('Image looks visually incorrect'), { code: 'VISUALLY_INCORRECT' }))
         })
@@ -94,8 +94,8 @@ function visuallyVerifyImage (imagePath, title, expectedPath, cb) {
       captureAndSaveDiff(title, expectedPath, function (err3, res) {
         if (err3) return detach(err3)
 
-        console.error('A diff of the images have been saved to:', res.diff)
-        console.error('The actual image have been saved to:', res.actual)
+        console.error('A diff of the images has been saved to:', res.diff)
+        console.error('The actual image has been saved to:', res.actual)
         detach()
       })
     }

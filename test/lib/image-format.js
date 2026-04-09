@@ -4,9 +4,14 @@ const spawnSync = require('child_process').spawnSync
 
 function imageFormat (imagePath) {
   const arg = ['imageinfo', '-format', imagePath]
-  const out = spawnSync('hdiutil', arg).stdout
+  const res = spawnSync('hdiutil', arg)
 
-  return out.toString().trim()
+  if (res.status !== 0) {
+    const message = res.stderr.toString().trim() || `hdiutil imageinfo failed with status ${res.status}`
+    throw new Error(message)
+  }
+
+  return res.stdout.toString().trim()
 }
 
 module.exports = imageFormat
