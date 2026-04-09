@@ -27,49 +27,49 @@ function retry (fn, cb) {
 }
 
 function captureAndVerify (title, expectedPath, cb) {
-  captureWindow('Finder', title, function (err, pngPath) {
-    if (err) return cb(err)
+  captureWindow('Finder', title)
+    .then(function (pngPath) {
+      const actualSize = sizeOf(pngPath)
+      const expectedSize = sizeOf(expectedPath)
 
-    const actualSize = sizeOf(pngPath)
-    const expectedSize = sizeOf(expectedPath)
+      // If the actual size is scaled by two, use the retina image.
+      if (actualSize.width === expectedSize.width * 2 && actualSize.height === expectedSize.height * 2) {
+        expectedPath = expectedPath.replace(/(\.[^.]*)$/, '@2x$1')
+      }
 
-    // If the actual size is scaled by two, use the retina image.
-    if (actualSize.width === expectedSize.width * 2 && actualSize.height === expectedSize.height * 2) {
-      expectedPath = expectedPath.replace(/(\.[^.]*)$/, '@2x$1')
-    }
+      looksSame(pngPath, expectedPath, toleranceOpts, function (err1, ok) {
+        fs.unlink(pngPath, function (err2) {
+          if (err1) return cb(err1)
+          if (err2) return cb(err2)
+          if (ok) return cb(null)
 
-    looksSame(pngPath, expectedPath, toleranceOpts, function (err1, ok) {
-      fs.unlink(pngPath, function (err2) {
-        if (err1) return cb(err1)
-        if (err2) return cb(err2)
-        if (ok) return cb(null)
-
-        cb(Object.assign(new Error('Image looks visually incorrect'), { code: 'VISUALLY_INCORRECT' }))
+          cb(Object.assign(new Error('Image looks visually incorrect'), { code: 'VISUALLY_INCORRECT' }))
+        })
       })
     })
-  })
+    .catch(cb)
 }
 
 function captureAndSaveDiff (title, expectedPath, cb) {
-  captureWindow('Finder', title, function (err, pngPath) {
-    if (err) return cb(err)
+  captureWindow('Finder', title)
+    .then(function (pngPath) {
+      const opts = Object.assign({
+        reference: expectedPath,
+        current: pngPath,
+        highlightColor: '#f0f'
+      }, toleranceOpts)
 
-    const opts = Object.assign({
-      reference: expectedPath,
-      current: pngPath,
-      highlightColor: '#f0f'
-    }, toleranceOpts)
-
-    looksSame.createDiff(opts, function (err, data) {
-      if (err) return cb(err)
-
-      temp.writeFile(data, function (err, diffPath) {
+      looksSame.createDiff(opts, function (err, data) {
         if (err) return cb(err)
 
-        cb(null, { diff: diffPath, actual: pngPath })
+        temp.writeFile(data, function (err, diffPath) {
+          if (err) return cb(err)
+
+          cb(null, { diff: diffPath, actual: pngPath })
+        })
       })
     })
-  })
+    .catch(cb)
 }
 
 function visuallyVerifyImage (imagePath, title, expectedPath, cb) {

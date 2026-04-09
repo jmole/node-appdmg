@@ -29,8 +29,29 @@ function runAppdmg (opts, verify, cb) {
       return cb(err)
     }
 
+    if (process.env.APPDMG_SKIP_VISUAL === '1') {
+      return cb(null)
+    }
+
     const expected = path.join(__dirname, verify.visually)
     visuallyVerifyImage(opts.target, verify.title, expected, cb)
+  })
+}
+
+function runAppdmgError (opts, expectedMessage, cb) {
+  const ee = appdmg(opts)
+
+  ee.on('finish', function () {
+    cb(new Error('Expected image creation to fail'))
+  })
+
+  ee.on('error', function (err) {
+    try {
+      assert.match(err.message, expectedMessage)
+      cb(null)
+    } catch (assertErr) {
+      cb(assertErr)
+    }
   })
 }
 
@@ -43,8 +64,8 @@ describe('api', function () {
   })
 
   afterEach(function () {
-    fs.unlinkSync(targetPath)
-    fs.rmdirSync(path.dirname(targetPath))
+    try { fs.unlinkSync(targetPath) } catch (err) {}
+    try { fs.rmdirSync(path.dirname(targetPath)) } catch (err) {}
   })
 
   it('creates an image from a modern specification', function (done) {
@@ -178,5 +199,50 @@ describe('api', function () {
     }
 
     runAppdmg(opts, verify, done)
+  })
+
+  it('emits an error for malformed json input', function (done) {
+    const sourcePath = path.join(targetDir, 'invalid.json')
+    fs.writeFileSync(sourcePath, '{ invalid json')
+
+    runAppdmgError({
+      target: targetPath,
+      source: sourcePath
+    }, /Unexpected token|Expected property name/, done)
+  })
+
+  it('emits an error when a file in the spec is missing', function (done) {
+    runAppdmgError({
+      target: targetPath,
+      basepath: path.join(__dirname, 'assets'),
+      specification: {
+        title: 'Test Title',
+        background: 'TestBkg.png',
+        contents: [
+          { x: 192, y: 344, type: 'file', path: 'MissingApp.app' }
+        ]
+      }
+    }, /not found at/, done)
+  })
+
+  it('emits an error for invalid specifications', function (done) {
+    runAppdmgError({
+      target: targetPath,
+      basepath: path.join(__dirname, 'assets'),
+      specification: {
+        contents: [
+          { x: 192, y: 344, type: 'file', path: 'TestApp.app' }
+        ]
+      }
+    }, /title/, done)
+  })
+
+  it('emits an error when the target already exists', function (done) {
+    fs.writeFileSync(targetPath, '')
+
+    runAppdmgError({
+      target: targetPath,
+      source: path.join(__dirname, 'assets', 'appdmg.json')
+    }, /Target already exists/, done)
   })
 })
