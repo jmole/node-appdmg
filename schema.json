@@ -96,7 +96,8 @@
             "type": "string"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^[^/\\\\]+$"
           }
         },
         "required": [

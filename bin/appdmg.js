@@ -17,18 +17,25 @@ function maybeWithColor (color, text) {
   return colors[color](text)
 }
 
-process.on('uncaughtException', function (err) {
+const argv = minimist(process.argv.slice(2), {
+  boolean: ['verbose', 'quiet', 'help', 'version'],
+  alias: { v: 'verbose' }
+})
+
+function printErrorAndExit (err) {
   if (!argv.quiet) {
     process.stderr.write('\n')
   }
 
-  if (argv === undefined || argv.verbose) {
+  if (argv.verbose) {
     process.stderr.write(`${err.stack}\n\n`)
   }
 
   process.stderr.write(`${maybeWithColor('red', `${err.name}: ${err.message}`)}\n`)
   process.exit(1)
-})
+}
+
+process.on('uncaughtException', printErrorAndExit)
 
 const usage = [
   'Generate beautiful dmg-images for your OS X applications.',
@@ -53,11 +60,6 @@ const usage = [
   '    Display version and exit',
   ''
 ].join('\n')
-
-const argv = minimist(process.argv.slice(2), {
-  boolean: [ 'verbose', 'quiet', 'help', 'version' ],
-  alias: { v: 'verbose' }
-})
 
 if (argv.version) {
   process.stderr.write(`node-appdmg v${pkg.version}\n`)
@@ -84,6 +86,8 @@ if (path.extname(argv._[1]) !== '.dmg') {
 const source = argv._[0]
 const target = argv._[1]
 const p = appdmg({ source, target })
+
+p.on('error', printErrorAndExit)
 
 p.on('progress', function (info) {
   if (argv.quiet) return
