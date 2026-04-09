@@ -9,7 +9,6 @@ const minimist = require('minimist')
 const pkg = require('../package.json')
 const appdmg = require('../index.js')
 const colors = require('../lib/colors')
-const repeatString = require('repeat-string')
 
 function maybeWithColor (color, text) {
   if (!process.stderr.isTTY) return text
@@ -38,7 +37,7 @@ function printErrorAndExit (err) {
 process.on('uncaughtException', printErrorAndExit)
 
 const usage = [
-  'Generate beautiful dmg-images for your OS X applications.',
+  'Generate beautiful dmg-images for your macOS applications.',
   '',
   'Usage: appdmg <json-path> <dmg-path>',
   '',
@@ -62,13 +61,18 @@ const usage = [
 ].join('\n')
 
 if (argv.version) {
-  process.stderr.write(`node-appdmg v${pkg.version}\n`)
+  process.stderr.write(`${pkg.name} v${pkg.version}\n`)
   process.exit(0)
 }
 
-if (argv.help || argv._.length < 2) {
+if (argv.help) {
   process.stderr.write(`${usage}\n`)
   process.exit(0)
+}
+
+if (argv._.length < 2) {
+  process.stderr.write(`${usage}\n`)
+  process.exit(1)
 }
 
 if (argv._.length > 2) {
@@ -94,7 +98,7 @@ p.on('progress', function (info) {
 
   if (info.type === 'step-begin') {
     const line = `[${info.current <= 9 ? ' ' : ''}${info.current}/${info.total}] ${info.title}...`
-    process.stderr.write(`${line}${repeatString(' ', 45 - line.length)}`)
+    process.stderr.write(`${line}${' '.repeat(Math.max(0, 45 - line.length))}`)
   }
 
   if (info.type === 'step-end') {

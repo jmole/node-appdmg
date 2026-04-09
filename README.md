@@ -1,11 +1,11 @@
-# node-appdmg
+# @jmole/appdmg
 
-Generate beautiful DMG-images for your OS X applications.
+Generate beautiful DMG-images for your macOS applications.
 
 ## Installation
 
 ```sh
-npm install -g appdmg
+npm install -g @jmole/appdmg
 ```
 
 ## Usage
@@ -27,7 +27,7 @@ appdmg test/assets/appdmg.json ~/Desktop/test.dmg
 
 ## JSON Input
 
-![Visualization](/help/help.png?raw=true)
+![Visualization](https://raw.githubusercontent.com/jmole/node-appdmg/master/help/help.png)
 
 The JSON input for the image follows a simple structure. All paths are relative to
 the JSON file's path.
@@ -65,8 +65,8 @@ the JSON file's path.
     - `UDRO` - UDIF read-only image
     - `UDCO` - UDIF ADC-compressed image
     - `UDZO` - UDIF zlib-compressed image
-    - `UDBZ` - UDIF bzip2-compressed image (OS X 10.4+ only)
-    - `ULFO` - UDIF lzfse-compressed image (OS X 10.11+ only)
+    - `UDBZ` - UDIF bzip2-compressed image (macOS 10.4+ only)
+    - `ULFO` - UDIF lzfse-compressed image (macOS 10.11+ only)
     - `ULMO` - UDIF lzma-compressed image (macOS 10.15+ only)
 - `filesystem` (enum[string], optional) - Disk image filesystem
     - `HFS+`
@@ -103,7 +103,7 @@ another javascript file, example:
 
 ```javascript
 
-const appdmg = require('appdmg');
+const appdmg = require('@jmole/appdmg');
 const ee = appdmg({ source: 'test/appdmg.json', target: 'test.dmg' });
 
 ee.on('progress', function (info) {
@@ -145,9 +145,9 @@ const ee = appdmg({
 
 ## OS Support
 
-Currently the only supported os is Mac OS X.
+Currently the only supported OS is macOS.
 
-Track the status of this here: https://github.com/LinusU/node-appdmg/issues/14
+Track the current status and report issues here: https://github.com/jmole/node-appdmg/issues
 
 ## Hidden files
 

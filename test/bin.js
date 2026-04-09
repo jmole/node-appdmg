@@ -20,12 +20,21 @@ describe('bin', function () {
   it('should print version number', function () {
     const res = spawnSync(bin, ['--version'])
 
+    assert.strictEqual(res.status, 0)
     assert.ok(bufferContains(res.stderr, pkg.version))
   })
 
   it('should print usage', function () {
     const res = spawnSync(bin, ['--help'])
 
+    assert.strictEqual(res.status, 0)
+    assert.ok(bufferContains(res.stderr, 'Usage:'))
+  })
+
+  it('should fail with missing arguments', function () {
+    const res = spawnSync(bin, [])
+
+    assert.strictEqual(res.status, 1)
     assert.ok(bufferContains(res.stderr, 'Usage:'))
   })
 
