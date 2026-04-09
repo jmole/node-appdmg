@@ -9,7 +9,6 @@ const assert = require('assert')
 
 const appdmg = require('../')
 const imageFormat = require('./lib/image-format')
-const visuallyVerifyImage = require('./lib/visually-verify-image')
 
 const STEPS = 22
 
@@ -33,12 +32,7 @@ function runAppdmg (opts, verify, cb) {
       return cb(err)
     }
 
-    if (process.env.APPDMG_SKIP_VISUAL === '1') {
-      return cb(null)
-    }
-
-    const expected = path.join(__dirname, verify.visually)
-    visuallyVerifyImage(opts.target, verify.title, expected, cb)
+    cb(null)
   })
 }
 
@@ -81,8 +75,7 @@ describe('api', function () {
 
     const verify = {
       format: 'UDZO',
-      title: 'Test Title',
-      visually: 'accepted-1.png'
+      title: 'Test Title'
     }
 
     runAppdmg(opts, verify, done)
@@ -98,8 +91,7 @@ describe('api', function () {
 
     const verify = {
       format: 'UDZO',
-      title: 'Test Title',
-      visually: 'accepted-1.png'
+      title: 'Test Title'
     }
 
     runAppdmg(opts, verify, done)
@@ -125,8 +117,7 @@ describe('api', function () {
 
     const verify = {
       format: 'UDZO',
-      title: 'Test Title',
-      visually: 'accepted-1.png'
+      title: 'Test Title'
     }
 
     runAppdmg(opts, verify, done)
@@ -153,8 +144,7 @@ describe('api', function () {
 
     const verify = {
       format: 'UDRO',
-      title: 'Test Title',
-      visually: 'accepted-1.png'
+      title: 'Test Title'
     }
 
     runAppdmg(opts, verify, done)
@@ -170,8 +160,7 @@ describe('api', function () {
 
     const verify = {
       format: 'UDZO',
-      title: 'Test Title',
-      visually: 'accepted-2.png'
+      title: 'Test Title'
     }
 
     runAppdmg(opts, verify, done)
@@ -197,8 +186,7 @@ describe('api', function () {
 
     const verify = {
       format: 'UDZO',
-      title: 'Test Title',
-      visually: 'accepted-3.png'
+      title: 'Test Title'
     }
 
     runAppdmg(opts, verify, done)

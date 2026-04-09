@@ -49,7 +49,7 @@
     "appdmg": "node ./bin/appdmg.js",
     "lint": "standard",
     "test": "npm run lint && mocha -b",
-    "test:ci": "APPDMG_SKIP_VISUAL=1 npm test"
+    "test:ci": "npm test"
   },
   "devDependencies": {
     "capture-window": "^0.2.0",

@@ -26,24 +26,59 @@ function retry (fn, cb) {
   setTimeout(runIteration, 700)
 }
 
+function getExpectedImagePath (actualPath, expectedPath) {
+  const actualSize = sizeOf(actualPath)
+  const expectedSize = sizeOf(expectedPath)
+
+  // If the actual size is scaled by two, use the retina image.
+  if (actualSize.width === expectedSize.width * 2 && actualSize.height === expectedSize.height * 2) {
+    return expectedPath.replace(/(\.[^.]*)$/, '@2x$1')
+  }
+
+  return expectedPath
+}
+
+function compareImage (actualPath, expectedPath, cb) {
+  const resolvedExpectedPath = getExpectedImagePath(actualPath, expectedPath)
+
+  looksSame(actualPath, resolvedExpectedPath, toleranceOpts, function (err, result) {
+    if (err) return cb(err)
+    if (result && result.equal) return cb(null)
+
+    cb(Object.assign(new Error('Image looks visually incorrect'), {
+      code: 'VISUALLY_INCORRECT',
+      actualPath
+    }))
+  })
+}
+
+function saveDiff (actualPath, expectedPath, cb) {
+  const resolvedExpectedPath = getExpectedImagePath(actualPath, expectedPath)
+  const opts = Object.assign({
+    reference: resolvedExpectedPath,
+    current: actualPath,
+    highlightColor: '#f0f'
+  }, toleranceOpts)
+
+  looksSame.createDiff(opts, function (err, data) {
+    if (err) return cb(err)
+
+    temp.writeFile(data, function (err2, diffPath) {
+      if (err2) return cb(err2)
+
+      cb(null, { diff: diffPath, actual: actualPath })
+    })
+  })
+}
+
 function captureAndVerify (title, expectedPath, cb) {
   captureWindow('Finder', title)
     .then(function (pngPath) {
-      const actualSize = sizeOf(pngPath)
-      const expectedSize = sizeOf(expectedPath)
-
-      // If the actual size is scaled by two, use the retina image.
-      if (actualSize.width === expectedSize.width * 2 && actualSize.height === expectedSize.height * 2) {
-        expectedPath = expectedPath.replace(/(\.[^.]*)$/, '@2x$1')
-      }
-
-      looksSame(pngPath, expectedPath, toleranceOpts, function (err1, result) {
+      compareImage(pngPath, expectedPath, function (err1) {
         fs.unlink(pngPath, function (err2) {
           if (err1) return cb(err1)
           if (err2) return cb(err2)
-          if (result && result.equal) return cb(null)
-
-          cb(Object.assign(new Error('Image looks visually incorrect'), { code: 'VISUALLY_INCORRECT' }))
+          cb(null)
         })
       })
     })
@@ -53,21 +88,7 @@ function captureAndVerify (title, expectedPath, cb) {
 function captureAndSaveDiff (title, expectedPath, cb) {
   captureWindow('Finder', title)
     .then(function (pngPath) {
-      const opts = Object.assign({
-        reference: expectedPath,
-        current: pngPath,
-        highlightColor: '#f0f'
-      }, toleranceOpts)
-
-      looksSame.createDiff(opts, function (err, data) {
-        if (err) return cb(err)
-
-        temp.writeFile(data, function (err, diffPath) {
-          if (err) return cb(err)
-
-          cb(null, { diff: diffPath, actual: pngPath })
-        })
-      })
+      saveDiff(pngPath, expectedPath, cb)
     })
     .catch(cb)
 }
@@ -106,8 +127,8 @@ function visuallyVerifyImage (imagePath, title, expectedPath, cb) {
       return done(spawnErr)
     }
 
-    retry(function (cb) {
-      captureAndVerify(title, expectedPath, cb)
+    retry(function (cb2) {
+      captureAndVerify(title, expectedPath, cb2)
     }, done)
   })
 }
