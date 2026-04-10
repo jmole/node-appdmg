@@ -18,14 +18,23 @@ function bufferContains (buffer, needle) {
 
 describe('bin', function () {
   it('should print version number', function () {
-    const res = spawnSync(bin, [ '--version' ])
+    const res = spawnSync(bin, ['--version'])
 
+    assert.strictEqual(res.status, 0)
     assert.ok(bufferContains(res.stderr, pkg.version))
   })
 
   it('should print usage', function () {
-    const res = spawnSync(bin, [ '--help' ])
+    const res = spawnSync(bin, ['--help'])
 
+    assert.strictEqual(res.status, 0)
+    assert.ok(bufferContains(res.stderr, 'Usage:'))
+  })
+
+  it('should fail with missing arguments', function () {
+    const res = spawnSync(bin, [])
+
+    assert.strictEqual(res.status, 1)
     assert.ok(bufferContains(res.stderr, 'Usage:'))
   })
 
@@ -36,11 +45,35 @@ describe('bin', function () {
     const targetDir = temp.mkdirSync()
     const targetPath = path.join(targetDir, 'Test.dmg')
 
-    const res = spawnSync(bin, [ source, targetPath ])
+    try {
+      const res = spawnSync(bin, [source, targetPath])
 
-    fs.unlinkSync(targetPath)
-    fs.rmdirSync(targetDir)
+      assert.strictEqual(res.status, 0)
+      assert.ok(bufferContains(res.stderr, targetPath))
+    } finally {
+      try { fs.unlinkSync(targetPath) } catch (err) {}
+      try { fs.rmdirSync(targetDir) } catch (err) {}
+    }
+  })
 
-    assert.ok(bufferContains(res.stderr, targetPath))
+  it('should fail with too many arguments', function () {
+    const res = spawnSync(bin, ['a.json', 'b.dmg', 'c.dmg'])
+
+    assert.notStrictEqual(res.status, 0)
+    assert.ok(bufferContains(res.stderr, 'Too many arguments'))
+  })
+
+  it('should fail for non-json input', function () {
+    const res = spawnSync(bin, ['a.txt', 'b.dmg'])
+
+    assert.notStrictEqual(res.status, 0)
+    assert.ok(bufferContains(res.stderr, 'Input must have the .json file extension'))
+  })
+
+  it('should fail for non-dmg output', function () {
+    const res = spawnSync(bin, ['a.json', 'b.txt'])
+
+    assert.notStrictEqual(res.status, 0)
+    assert.ok(bufferContains(res.stderr, 'Output must have the .dmg file extension'))
   })
 })

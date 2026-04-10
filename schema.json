@@ -75,6 +75,7 @@
     },
     "contents": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
         "properties": {
@@ -96,7 +97,8 @@
             "type": "string"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^[^/\\\\]+$"
           }
         },
         "required": [

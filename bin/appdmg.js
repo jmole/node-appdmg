@@ -9,7 +9,6 @@ const minimist = require('minimist')
 const pkg = require('../package.json')
 const appdmg = require('../index.js')
 const colors = require('../lib/colors')
-const repeatString = require('repeat-string')
 
 function maybeWithColor (color, text) {
   if (!process.stderr.isTTY) return text
@@ -17,21 +16,28 @@ function maybeWithColor (color, text) {
   return colors[color](text)
 }
 
-process.on('uncaughtException', function (err) {
+const argv = minimist(process.argv.slice(2), {
+  boolean: ['verbose', 'quiet', 'help', 'version'],
+  alias: { v: 'verbose' }
+})
+
+function printErrorAndExit (err) {
   if (!argv.quiet) {
     process.stderr.write('\n')
   }
 
-  if (argv === undefined || argv.verbose) {
+  if (argv.verbose) {
     process.stderr.write(`${err.stack}\n\n`)
   }
 
   process.stderr.write(`${maybeWithColor('red', `${err.name}: ${err.message}`)}\n`)
   process.exit(1)
-})
+}
+
+process.on('uncaughtException', printErrorAndExit)
 
 const usage = [
-  'Generate beautiful dmg-images for your OS X applications.',
+  'Generate beautiful dmg-images for your macOS applications.',
   '',
   'Usage: appdmg <json-path> <dmg-path>',
   '',
@@ -54,19 +60,19 @@ const usage = [
   ''
 ].join('\n')
 
-const argv = minimist(process.argv.slice(2), {
-  boolean: [ 'verbose', 'quiet', 'help', 'version' ],
-  alias: { v: 'verbose' }
-})
-
 if (argv.version) {
-  process.stderr.write(`node-appdmg v${pkg.version}\n`)
+  process.stderr.write(`${pkg.name} v${pkg.version}\n`)
   process.exit(0)
 }
 
-if (argv.help || argv._.length < 2) {
+if (argv.help) {
   process.stderr.write(`${usage}\n`)
   process.exit(0)
+}
+
+if (argv._.length < 2) {
+  process.stderr.write(`${usage}\n`)
+  process.exit(1)
 }
 
 if (argv._.length > 2) {
@@ -85,12 +91,14 @@ const source = argv._[0]
 const target = argv._[1]
 const p = appdmg({ source, target })
 
+p.on('error', printErrorAndExit)
+
 p.on('progress', function (info) {
   if (argv.quiet) return
 
   if (info.type === 'step-begin') {
     const line = `[${info.current <= 9 ? ' ' : ''}${info.current}/${info.total}] ${info.title}...`
-    process.stderr.write(`${line}${repeatString(' ', 45 - line.length)}`)
+    process.stderr.write(`${line}${' '.repeat(Math.max(0, 45 - line.length))}`)
   }
 
   if (info.type === 'step-end') {

@@ -26,50 +26,71 @@ function retry (fn, cb) {
   setTimeout(runIteration, 700)
 }
 
-function captureAndVerify (title, expectedPath, cb) {
-  captureWindow('Finder', title, function (err, pngPath) {
+function getExpectedImagePath (actualPath, expectedPath) {
+  const actualSize = sizeOf(actualPath)
+  const expectedSize = sizeOf(expectedPath)
+
+  // If the actual size is scaled by two, use the retina image.
+  if (actualSize.width === expectedSize.width * 2 && actualSize.height === expectedSize.height * 2) {
+    return expectedPath.replace(/(\.[^.]*)$/, '@2x$1')
+  }
+
+  return expectedPath
+}
+
+function compareImage (actualPath, expectedPath, cb) {
+  const resolvedExpectedPath = getExpectedImagePath(actualPath, expectedPath)
+
+  looksSame(actualPath, resolvedExpectedPath, toleranceOpts, function (err, result) {
+    if (err) return cb(err)
+    if (result && result.equal) return cb(null)
+
+    cb(Object.assign(new Error('Image looks visually incorrect'), {
+      code: 'VISUALLY_INCORRECT',
+      actualPath
+    }))
+  })
+}
+
+function saveDiff (actualPath, expectedPath, cb) {
+  const resolvedExpectedPath = getExpectedImagePath(actualPath, expectedPath)
+  const opts = Object.assign({
+    reference: resolvedExpectedPath,
+    current: actualPath,
+    highlightColor: '#f0f'
+  }, toleranceOpts)
+
+  looksSame.createDiff(opts, function (err, data) {
     if (err) return cb(err)
 
-    const actualSize = sizeOf(pngPath)
-    const expectedSize = sizeOf(expectedPath)
+    temp.writeFile(data, function (err2, diffPath) {
+      if (err2) return cb(err2)
 
-    // If the actual size is scaled by two, use the retina image.
-    if (actualSize.width === expectedSize.width * 2 && actualSize.height === expectedSize.height * 2) {
-      expectedPath = expectedPath.replace(/(\.[^.]*)$/, '@2x$1')
-    }
-
-    looksSame(pngPath, expectedPath, toleranceOpts, function (err1, ok) {
-      fs.unlink(pngPath, function (err2) {
-        if (err1) return cb(err1)
-        if (err2) return cb(err2)
-        if (ok) return cb(null)
-
-        cb(Object.assign(new Error('Image looks visually incorrect'), { code: 'VISUALLY_INCORRECT' }))
-      })
+      cb(null, { diff: diffPath, actual: actualPath })
     })
   })
 }
 
-function captureAndSaveDiff (title, expectedPath, cb) {
-  captureWindow('Finder', title, function (err, pngPath) {
-    if (err) return cb(err)
-
-    const opts = Object.assign({
-      reference: expectedPath,
-      current: pngPath,
-      highlightColor: '#f0f'
-    }, toleranceOpts)
-
-    looksSame.createDiff(opts, function (err, data) {
-      if (err) return cb(err)
-
-      temp.writeFile(data, function (err, diffPath) {
-        if (err) return cb(err)
-
-        cb(null, { diff: diffPath, actual: pngPath })
+function captureAndVerify (title, expectedPath, cb) {
+  captureWindow('Finder', title)
+    .then(function (pngPath) {
+      compareImage(pngPath, expectedPath, function (err1) {
+        fs.unlink(pngPath, function (err2) {
+          if (err1) return cb(err1)
+          if (err2) return cb(err2)
+          cb(null)
+        })
       })
     })
-  })
+    .catch(cb)
+}
+
+function captureAndSaveDiff (title, expectedPath, cb) {
+  captureWindow('Finder', title)
+    .then(function (pngPath) {
+      saveDiff(pngPath, expectedPath, cb)
+    })
+    .catch(cb)
 }
 
 function visuallyVerifyImage (imagePath, title, expectedPath, cb) {
@@ -94,8 +115,8 @@ function visuallyVerifyImage (imagePath, title, expectedPath, cb) {
       captureAndSaveDiff(title, expectedPath, function (err3, res) {
         if (err3) return detach(err3)
 
-        console.error('A diff of the images have been saved to:', res.diff)
-        console.error('The actual image have been saved to:', res.actual)
+        console.error('A diff of the images has been saved to:', res.diff)
+        console.error('The actual image has been saved to:', res.actual)
         detach()
       })
     }
@@ -106,8 +127,8 @@ function visuallyVerifyImage (imagePath, title, expectedPath, cb) {
       return done(spawnErr)
     }
 
-    retry(function (cb) {
-      captureAndVerify(title, expectedPath, cb)
+    retry(function (cb2) {
+      captureAndVerify(title, expectedPath, cb2)
     }, done)
   })
 }
