@@ -1,6 +1,6 @@
 {
   "name": "@jmole/appdmg",
-  "version": "0.6.9",
+  "version": "0.6.10",
   "license": "MIT",
   "author": "turtlebot@moeller.io",
   "description": "Generate beautiful DMG images for your macOS applications.",
@@ -23,6 +23,7 @@
     "url": "https://github.com/jmole/node-appdmg/issues"
   },
   "files": [
+    "assets/",
     "bin/",
     "lib/",
     "index.js",
@@ -32,14 +33,15 @@
   ],
   "dependencies": {
     "async": "^1.4.2",
-    "ds-store": "^0.1.5",
+    "bplist-creator": "^0.0.8",
     "execa": "^1.0.0",
     "fs-temp": "^1.0.0",
     "fs-xattr": "^0.4.0",
     "image-size": "^0.7.4",
     "is-my-json-valid": "^2.20.0",
     "minimist": "^1.1.3",
-    "parse-color": "^1.0.0"
+    "parse-color": "^1.0.0",
+    "tn1150": "^0.1.0"
   },
   "engines": {
     "node": ">=18"
